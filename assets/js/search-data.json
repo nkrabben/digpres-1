@@ -1,0 +1,128 @@
+{"0": {
+    "doc": "About the Program",
+    "title": "About Digital Preservation at NYPL",
+    "content": "The NYPL Digital Preservation program is responsible for material acquired or created by the Library’s Digital Imaging Services, Media Preservation Labs, Media Preservation Services, and Digital Archives programs. Primary activities include: . | documenting workflows | monitoring storage environment | auditing processes | performing preservation interventions | . Staffing . | Hilary Shiue - Digital Repository Coordinator | Nick Krabbenhoeft - Assistant Director, Digital Preservation | . ",
+    "url": "/digpres/about/#about-digital-preservation-at-nypl",
+    "relUrl": "/about/#about-digital-preservation-at-nypl"
+  },"1": {
+    "doc": "About the Program",
+    "title": "About Digital Preservation",
+    "content": "The program’s short definition is that “Digital preservation ensures reliable long-term access to digital objects”. We understand each component of that definition as follows: . | ensures - we prefer to document, monitor, and audit rather than to perform heroic interventions | reliable - we maintain processes that can adapt to changing technology, staff turnover, and new types of collections, so that other parts of the library can focus on their roles | long-term access - we think about how our work can support access today and 25 years in the future | digital objects - we work with any collection material that can be stored digitally, whether digitized or born-digital, original or derived | . There’s no one true way to do digital preservation. We constantly compare our own policies and processes to others’ in hope of refining and improving them. ",
+    "url": "/digpres/about/#about-digital-preservation",
+    "relUrl": "/about/#about-digital-preservation"
+  },"2": {
+    "doc": "About the Program",
+    "title": "About this site",
+    "content": "This site was started in June 2016. It aims to document work in order to share it with the community and invite discussion. You can find the source code for this site here. ",
+    "url": "/digpres/about/#about-this-site",
+    "relUrl": "/about/#about-this-site"
+  },"3": {
+    "doc": "About the Program",
+    "title": "About the Program",
+    "content": " ",
+    "url": "/digpres/about/",
+    "relUrl": "/about/"
+  },"4": {
+    "doc": "Contact",
+    "title": "By Email",
+    "content": "digpres+contact@nypl.org . ",
+    "url": "/digpres/contact/",
+    "relUrl": "/contact/"
+  },"5": {
+    "doc": "Contact",
+    "title": "By Mail",
+    "content": "Digital Preservation 31-11 Thompson Ave, Rm 205 Long Island City, NY 11101 USA . ",
+    "url": "/digpres/contact/",
+    "relUrl": "/contact/"
+  },"6": {
+    "doc": "Contact",
+    "title": "Contact",
+    "content": "Get in touch with the Digital Preservation Program regarding our work at NYPL and suggestions for improvement on work published here. ",
+    "url": "/digpres/contact/",
+    "relUrl": "/contact/"
+  },"7": {
+    "doc": "Home",
+    "title": "NYPL Digital Preservation Program",
+    "content": "This site documents: . | the policies of the New York Public Library Digital Preservation Program | the usage of Preservica as the Library's digital repository | blog posts about work currently happening within the program | . ",
+    "url": "/digpres/",
+    "relUrl": "/"
+  },"8": {
+    "doc": "Home",
+    "title": "Recent Posts",
+    "content": "exFAT: A File System for Your Portable Drives . Feb 14, 2022 exFAT: A File System for Your Portable Drives We use a lot of portable drives at the library. They range in size from 500 GB... Sed It and Forget It: Stream Editing and Metadata Repairs . Jan 30, 2019 I made a mistake prepping some metadata files the other day. I picked the wrong three-letter code for a division field for use in a... MaybeBytes: What the '700MB' on a CD-R means . Jan 8, 2019 When you look at an old CD, you might see ‘700MB’ printed in large letters on the label. MB is the SI abbreviation for megabytes... subscribe via RSS . ",
+    "url": "/digpres/",
+    "relUrl": "/"
+  },"9": {
+    "doc": "Home",
+    "title": "Home",
+    "content": " ",
+    "url": "/digpres/",
+    "relUrl": "/"
+  },"10": {
+    "doc": "Posts",
+    "title": "2022",
+    "content": "| exFAT: A File System for Your Portable Drives (2022 Feb 14) | ",
+    "url": "/digpres/posts/",
+    "relUrl": "/posts/"
+  },"11": {
+    "doc": "Posts",
+    "title": "2019",
+    "content": "| Sed It and Forget It: Stream Editing and Metadata Repairs (2019 Jan 30) | MaybeBytes: What the '700MB' on a CD-R means (2019 Jan 8) | ",
+    "url": "/digpres/posts/",
+    "relUrl": "/posts/"
+  },"12": {
+    "doc": "Posts",
+    "title": "2018",
+    "content": "| ePADD and Archivematica (2018 Nov 2) | What Fixity Means (2018 Aug 27) | Bashing out another file format signature (2018 Jan 31) | Bashing out a file format signature (2018 Jan 30) | ",
+    "url": "/digpres/posts/",
+    "relUrl": "/posts/"
+  },"13": {
+    "doc": "Posts",
+    "title": "2017",
+    "content": "| Data Analysis Tools (2017 Dec 30) | Troubleshooting a Siegfried Run (2017 Dec 26) | Starting Small with Raspberry Pi (2017 Dec 20) | ",
+    "url": "/digpres/posts/",
+    "relUrl": "/posts/"
+  },"14": {
+    "doc": "Posts",
+    "title": "2016",
+    "content": "| hello, world! (2016 Jun 21) | . ",
+    "url": "/digpres/posts/",
+    "relUrl": "/posts/"
+  },"15": {
+    "doc": "Posts",
+    "title": "Posts",
+    "content": "Irregularly published notes based on projects happening within the program. ",
+    "url": "/digpres/posts/",
+    "relUrl": "/posts/"
+  },"16": {
+    "doc": "Ingest",
+    "title": "Package Requirements",
+    "content": "In order to create scalable, sustainable workflows, the output of every acquisition or digitization program must have document packaging requirements, for aspects such as: . | encodings | file formats | file names | folder structures | metadata sidecars Developing these is the responsibility of the acquisition or digitization program, in consultation with the Digital Preservation program. | . Each ingest page contains links to this documentation (when publicly available) or an abbreviated form of this documentation. ",
+    "url": "/digpres/docs/ingest/overview#package-requirements",
+    "relUrl": "/docs/ingest/overview#package-requirements"
+  },"17": {
+    "doc": "Ingest",
+    "title": "Data Model",
+    "content": "In order to simplify the management of the collection and the creation of access services, all content in Preservica is modeled with a common data model. NYPL Digital Preservation is responsible for defining this model and how it adapted to content type. Each ingest page contains a diagram of content type’s data model and an example, including any optional files that may be added at a later date. ",
+    "url": "/digpres/docs/ingest/overview#data-model",
+    "relUrl": "/docs/ingest/overview#data-model"
+  },"18": {
+    "doc": "Ingest",
+    "title": "Process",
+    "content": "The ingest process converts received packages into a structure that meets the expected data model. This process may require: . | moving data to staging storage, hot folders, or other storage devices | changing file names, folder names, or other aspects of the package | validating the received and/or converted packages | confirmation of completed ingest | . Each ingest page contains a step-by-step workflow of the process. ",
+    "url": "/digpres/docs/ingest/overview#process",
+    "relUrl": "/docs/ingest/overview#process"
+  },"19": {
+    "doc": "Ingest",
+    "title": "Ingest",
+    "content": "The following pages describe the ingest processes for each workflow that feeds collections to Preservica. The workflows include: . | Born-Digital Archives | Born-Digital Audio and Moving Images | Digitized Audio and Moving Images (AMI) | Digitized Images | . Each page contains the following information. ",
+    "url": "/digpres/docs/ingest/overview",
+    "relUrl": "/docs/ingest/overview"
+  },"20": {
+    "doc": "Topics",
+    "title": "Topics",
+    "content": "Here are all the posts on this site grouped by topic. Site-update . | hello, world! (2016 Jun 21) | . File-formats . | Bashing out another file format signature (2018 Jan 31) | Bashing out a file format signature (2018 Jan 30) | Starting Small with Raspberry Pi (2017 Dec 20) | . Siegfried . | Troubleshooting a Siegfried Run (2017 Dec 26) | Starting Small with Raspberry Pi (2017 Dec 20) | . Raspberry-pi . | Bashing out another file format signature (2018 Jan 31) | Bashing out a file format signature (2018 Jan 30) | Troubleshooting a Siegfried Run (2017 Dec 26) | . Bash . | Bashing out another file format signature (2018 Jan 31) | Bashing out a file format signature (2018 Jan 30) | Troubleshooting a Siegfried Run (2017 Dec 26) | . Data-analysis . | Data Analysis Tools (2017 Dec 30) | . Python . | Data Analysis Tools (2017 Dec 30) | . R . | Data Analysis Tools (2017 Dec 30) | . Fixity . | What Fixity Means (2018 Aug 27) | . Aip . | ePADD and Archivematica (2018 Nov 2) | What Fixity Means (2018 Aug 27) | . Bagit . | What Fixity Means (2018 Aug 27) | . Sip . | MaybeBytes: What the '700MB' on a CD-R means (2019 Jan 8) | ePADD and Archivematica (2018 Nov 2) | . Dip . | ePADD and Archivematica (2018 Nov 2) | . Oais . | ePADD and Archivematica (2018 Nov 2) | . Archivematica . | ePADD and Archivematica (2018 Nov 2) | . Epadd . | ePADD and Archivematica (2018 Nov 2) | . Audio . | MaybeBytes: What the '700MB' on a CD-R means (2019 Jan 8) | . Metadata . | Sed It and Forget It: Stream Editing and Metadata Repairs (2019 Jan 30) | . Command-line . | Sed It and Forget It: Stream Editing and Metadata Repairs (2019 Jan 30) | . File-systems . | exFAT: A File System for Your Portable Drives (2022 Feb 14) | . ",
+    "url": "/digpres/posts/topics",
+    "relUrl": "/posts/topics"
+  }
+}

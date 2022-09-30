@@ -1,0 +1,946 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>NYPL Digital Preservation</title>
+    <description>Documentation for the Digital Preservation program at the New York Public Library.
+</description>
+    <link>https://nypl.github.io/digpres/</link>
+    <atom:link href="https://nypl.github.io/digpres/posts/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Fri, 30 Sep 2022 15:26:52 +0000</pubDate>
+    <lastBuildDate>Fri, 30 Sep 2022 15:26:52 +0000</lastBuildDate>
+    <generator>Jekyll v3.9.2</generator>
+    
+      <item>
+        <title>exFAT: A File System for Your Portable Drives</title>
+        <description>&lt;h1 id=&quot;exfat-a-file-system-for-your-portable-drives&quot;&gt;exFAT: A File System for Your Portable Drives&lt;/h1&gt;
+
+&lt;p&gt;We use a lot of portable drives at the library.
+They range in size from 500 GB solid state disks the size of a credit card to a 126 TB RAID 5 array with its own rollaway case.
+All of them use the same file system, exFAT.
+And if you are also using a lot of portable drives, you should consider exFAT as well.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-is-a-file-system&quot;&gt;What is a file system?&lt;/h2&gt;
+
+&lt;p&gt;A file system is the way that data is structured on a storage device.
+To better understand it, think about some of the things that happens when you open a file on your desktop named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;video.mov&lt;/code&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;The computer figures out where the Desktop folder is in the folder hierarchy.&lt;/li&gt;
+  &lt;li&gt;It checks if there is a file in that folder named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;video.mov&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;It checks to see if you have permission to open that file.&lt;/li&gt;
+  &lt;li&gt;It finds out the sector of the device where the first part of that file is written.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The rules that create the architecture are part of the file system.
+The &lt;a href=&quot;https://en.wikipedia.org/wiki/File_Allocation_Table&quot;&gt;File Allocation Table (FAT)&lt;/a&gt; file system, first published by Microsoft in 1977, is a good example to use for illustration.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Each folder is defined as its own table with a row for every file or folder that is a member of that folder.&lt;/li&gt;
+  &lt;li&gt;The first 11 bytes of the row define the file or folder name, represented as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(8 characters).(3 characters)&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;The 13th byte of the row specifies whether the file requires a password to read, modify, or delete.&lt;/li&gt;
+  &lt;li&gt;The 20th and 21st byte specify which sector of the device the first chunk of the file is stored in.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;As long as your computer system knows those rules and can follow them, it can use a storage device formatted with that file system.
+If it can’t read those rules, your computer will be able to see the storage device but not the contents of it.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-are-other-examples-of-file-systems&quot;&gt;What are other examples of file systems?&lt;/h2&gt;
+
+&lt;p&gt;A file system developed in 1977 will have the biases of a computing in 1977.
+For example, a 5.25-inch floppy disk only held about 360 thousand bytes, so the designers didn’t want to consume too much space with the file system.
+With that perspective 11 characters for the file name and 2 bytes for the sector position was fine.
+On a device with 5 billion bytes of capacity, 11 characters for a file name is miserly, and 2 bytes isn’t enough for the sector positions.
+FAT12 was extended to deal with some of these issues, first to FAT16 (1984) and then to FAT32 (1996).&lt;/p&gt;
+
+&lt;p&gt;But file systems can do even more than just organize a storage device.
+They can have features like journaling, data integrity checks, on-the-fly compression, and storing metadata about the files.
+The implementation of these features could be commercially advantageous and vendors created their own file systems to best interact with their systems.&lt;/p&gt;
+
+&lt;p&gt;Apple has used &lt;a href=&quot;https://en.wikipedia.org/wiki/Hierarchical_File_System&quot;&gt;HFS&lt;/a&gt; (1986), &lt;a href=&quot;https://en.wikipedia.org/wiki/HFS_Plus&quot;&gt;HFS+&lt;/a&gt; (1998), and &lt;a href=&quot;https://en.wikipedia.org/wiki/Apple_File_System&quot;&gt;APFS&lt;/a&gt; (2017).
+Microsoft created &lt;a href=&quot;https://en.wikipedia.org/wiki/NTFS&quot;&gt;NTFS&lt;/a&gt; (1993).
+In Linux, there is &lt;a href=&quot;https://en.wikipedia.org/wiki/Ext2&quot;&gt;ext2&lt;/a&gt; (1993), &lt;a href=&quot;https://en.wikipedia.org/wiki/Ext3&quot;&gt;ext3&lt;/a&gt; (2001), &lt;a href=&quot;https://en.wikipedia.org/wiki/Ext4&quot;&gt;ext4&lt;/a&gt; (2008), and &lt;a href=&quot;https://en.wikipedia.org/wiki/Btrfs&quot;&gt;btrfs&lt;/a&gt; (still in development).
+&lt;a href=&quot;https://en.wikipedia.org/wiki/Comparison_of_file_systems&quot;&gt;There are many more&lt;/a&gt; if you’re curious. (Thanks to Ross Spencer for this link)&lt;/p&gt;
+
+&lt;p&gt;Take note of the relationship between operating systems and file systems.
+Every OS will best support in-house developed file systems.
+Supporting others’ file systems is not guaranteed.
+Windows can’t read HFS+.
+macOS can read from an NTFS-formatted device, but it can’t write to it.
+Linux can work with nearly everything, if someone released software to do it and you installed it.&lt;/p&gt;
+
+&lt;h2 id=&quot;why-does-this-matter&quot;&gt;Why does this matter?&lt;/h2&gt;
+
+&lt;p&gt;For those of us that work with old storage media, identifying a file system and having a computer with the appropriate software to read it is important.
+That’s just another example of needing to maintain an array of options to access data from the harried years of the 80s and 90s.&lt;/p&gt;
+
+&lt;p&gt;For those of us writing data to storage devices, we need to choose file systems that meet the needs of our computing environment.
+A common need is cross-platform compatibility.
+Because, if my digitization vendor uses Windows workstations and I use Macs, the hard drive we shuttle data with must be compatible with both.&lt;/p&gt;
+
+&lt;p&gt;You can install software to add additional file system compatibility.
+And I do this when I have open-source options available or budget to buy licenses.
+But, it’s easier if I don’t have to worry about what software is on what workstation.
+Isn’t there a cross-platform file system?&lt;/p&gt;
+
+&lt;h2 id=&quot;exfat-the-cross-platform-choice&quot;&gt;exFAT: The Cross-Platform Choice&lt;/h2&gt;
+
+&lt;p&gt;Microsoft released another file system in 2006, the &lt;a href=&quot;https://en.wikipedia.org/wiki/ExFAT&quot;&gt;extensible File Allocation Table (exFAT)&lt;/a&gt;.
+exFAT addresses FAT32’s critical flaw in modern computing environments.
+The FAT table records the size of a file using 4 bytes.
+That means a storage device using FAT can only store files that are 4,294,967,295 bytes (4.29 GB) large.
+In digitization work, this is smaller than most video files and even some audio files.&lt;/p&gt;
+
+&lt;p&gt;exFAT uses 8 bytes to store the size of a file, which means the maximum file size is 1.84 quintillion bytes (1.84 exabytes).
+At this point, that’s plenty of space for our entire collection, much less a single file.&lt;/p&gt;
+
+&lt;p&gt;exFAT is natively supported in Windows, macOS, and Linux.
+That means no software installation needed.&lt;/p&gt;
+
+&lt;p&gt;It also supports all unicode characters, meaning &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;视频.mov&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ویڈیو.mov&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;this-file-name-is-really-very-long-,-probably-too-long-to-be-useful_.mov&lt;/code&gt;and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;📹 .mov&lt;/code&gt; are all legal.&lt;/p&gt;
+
+&lt;h3 id=&quot;whats-the-catch&quot;&gt;What’s the catch?&lt;/h3&gt;
+
+&lt;p&gt;Well, exFAT doesn’t have support for useful features like journaling, data integrity checks, and on-the-fly compression.
+Of these, the lack of journaling is the most important.
+File systems with &lt;a href=&quot;https://en.wikipedia.org/wiki/Journaling_file_system&quot;&gt;journaling&lt;/a&gt; keep track of changes in progress.
+If you’re in the middle of an action like moving a folder when you unplug it or it loses power, the file system could be corrupted.
+Your computer warns you about unplugging a drive without ejecting it because of that risk.
+A journaling file system can fix the file system next time it is connected.
+exFAT can leave you high and dry.
+(Thanks to Kieran O’Leary for prompting me to learn what journaling is.)&lt;/p&gt;
+
+&lt;p&gt;The cross-platform support also isn’t perfect.
+macOS only supports exFAT drives formatted with a sector size of 128-1024 kiB.
+Either format the drive on a Mac or be careful when choosing options during formatting on Windows and Linux.&lt;/p&gt;
+
+&lt;p&gt;Linux support only started in 2019 with kernel in 5.4, with better support starting in &lt;a href=&quot;https://arstechnica.com/information-technology/2020/03/the-exfat-filesystem-is-coming-to-linux-paragon-softwares-not-happy-about-it/&quot;&gt;5.7&lt;/a&gt; (I’m still amazed that I can plug a 100+ TB RAID into an Android phone).
+However, if you’re using a Linux distro with a pre-5.4 kernel, you need to install exFAT drivers yourself.
+Most notably in our community, that includes BitCurator 2.x, which is based on Ubuntu 18.04 LTS with the 5.3 kernel. (Thanks to Kieran for this as well.)&lt;/p&gt;
+
+&lt;p&gt;To me, those are acceptable compromises when it comes to portable hard drives used to transfer files.&lt;/p&gt;
+
+&lt;h2 id=&quot;exfat-is-an-industry-standard&quot;&gt;exFAT is an Industry Standard&lt;/h2&gt;
+
+&lt;p&gt;If you’re looking for more validation, take a look at SD cards.
+They are the last major removable media format that needs to be accessible on a variety of computers.
+The default file system for all cards larger than 32 GB is exFAT.&lt;/p&gt;
+
+&lt;p&gt;exFAT has proved to be the most reliable solution in our work.
+It’s worth evaluating in your context if you’re frustrated with platform cross-compatibility.&lt;/p&gt;
+</description>
+        <pubDate>Mon, 14 Feb 2022 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/file-systems</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/file-systems</guid>
+        
+        
+        <category>file-systems</category>
+        
+      </item>
+    
+      <item>
+        <title>Sed It and Forget It: Stream Editing and Metadata Repairs</title>
+        <description>&lt;p&gt;I made a mistake prepping some metadata files the other day. I picked the wrong three-letter code for a division field for use in a spreadsheet, exported the rows of the spreadsheet to 1200 structured data files we use, and then updated those files with technical metadata. So how to repair that mistake?&lt;/p&gt;
+
+&lt;p&gt;Option 1: Go back to my spreadsheet, update the columns, update some dependent columns, re-export, and re-update.&lt;/p&gt;
+
+&lt;p&gt;Option 2: Copy my Python script to update the technical metadata and rewrite it to update the fields with the typo.&lt;/p&gt;
+
+&lt;p&gt;Option 3: Write a sed command.&lt;/p&gt;
+
+&lt;p&gt;For me, the right answer was sed.&lt;/p&gt;
+
+&lt;h2 id=&quot;sed-the-stream-editor&quot;&gt;sed, the stream editor&lt;/h2&gt;
+&lt;p&gt;Here’s the &lt;a href=&quot;https://en.wikipedia.org/wiki/Sed&quot;&gt;Wikipedia definition&lt;/a&gt;: “a Unix utility that parses and transforms text, using a simple, compact programming language.” In other words, sed edits texts as it reads it, according to whatever short editing recipe you give it. For my purposes, the goal is replacing one three-letter string with another three-letter string. Let’s dig in.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Replace typo string with correct string&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# sed, edits a stream of text&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 's/&quot;doh/&quot;div/g', recipe for the edit, '/' divides the parts of the recipe&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;## s, substitute - replace one string with another&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;## &quot;doh, string to look for&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;## &quot;div, string to replace it with&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;## g, global - perform substitution everywhere it's found, regardless of case&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# /path/to/file&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/&quot;doh/&quot;div/g'&lt;/span&gt; /path/to/file&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;That command will print out the result to your terminal, which is always a good practice as you’re building a recipe.&lt;/p&gt;
+
+&lt;p&gt;That recipe performs global replacements, so defining the strings too broadly might lead to problems. For example, if I just looked for ‘doh’, I could overwrite ‘Play-doh’ and ‘Doha Airport’ as ‘Play-div’ and ‘Diva Airport’. I knew my typos always occured with a preceding ‘”’, so I include that ‘”’ in my recipe.&lt;/p&gt;
+
+&lt;p&gt;Even more powerfully, sed can immediately write changes back to the original file if you add a specific flag.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Replace typo string with correct string and rewrite original file&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# sed, edits a stream of text&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -i '', save the edited text back to the input file (for Mac)&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 's/&quot;doh/&quot;div/g', recipe for the edit, '/' divides the parts of the recipe&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# /path/to/\*.json, path wildcard to call all json files in a directory &lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;''&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/&quot;doh/&quot;div/g'&lt;/span&gt; /path/to/&lt;span class=&quot;se&quot;&gt;\*&lt;/span&gt;json&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Once the recipe is performing as expected, the ‘-i’ flag writes the edits back to the file instead of printing it to the terminal. Using the ‘*’ pushes the automation one step further by opening all of files that match the path pattern. In one fell swoop, that’s 2400 corrections across 1200 files for me.&lt;/p&gt;
+
+&lt;p&gt;The tool can do much more, but I only really know how to do text substitution with it. If you want to go really deep there’s a &lt;a href=&quot;http://www.grymoire.com/Unix/Sed.html&quot;&gt;grymoire&lt;/a&gt; for it.&lt;/p&gt;
+
+&lt;h2 id=&quot;structured-data-is-nice-for-digitization-projects&quot;&gt;Structured Data is Nice for Digitization Projects&lt;/h2&gt;
+&lt;p&gt;A side note about metadata editing tools, the format of a metadata container will often define the options for editing.&lt;/p&gt;
+
+&lt;p&gt;Using spreadsheets as the primary container for metadata, would mean using spreadsheet software to perform any edits. There’s a longer post to write about comparing spreadsheets and structured data files, but the basic point is that spreadsheets offer enormously powerful tools, within a single spreadsheet. If you have more spreadsheets, you need to perform those actions in each spreadsheet.&lt;/p&gt;
+
+&lt;p&gt;On the other had, structured data formats are readable by a number of bash tools and programming languages. And, those tools often have idioms for applying one change to a large number of files. For example, using more wildcards expands my reach from a single directory to multiple.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Replace typo string with correct string and rewrite original file&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# sed, edits a stream of text&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -i '', save the edited text back to the input file (for Mac)&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 's/&quot;doh/&quot;div/g', recipe for the edit, '/' divides the parts of the recipe&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# /path/to/project\*/\*.json, path wildcard to call all json files in directory that start with 'project'&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-i&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;''&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'s/&quot;doh/&quot;div/g'&lt;/span&gt; /path/to/project&lt;span class=&quot;se&quot;&gt;\*&lt;/span&gt;/&lt;span class=&quot;se&quot;&gt;\*&lt;/span&gt;json&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And the really nice thing about structured data formats is that they are stored as text, so you can use either tools optimized for text processing like sed and tools that can parse the data structure like xml or json.&lt;/p&gt;
+
+&lt;h2 id=&quot;conclusions&quot;&gt;Conclusions&lt;/h2&gt;
+&lt;p&gt;If you want to see the possibilities, I’d recommend pulling together some XML files in EAD, PBCore, or whatever flavor you tend to use and try out some manipulations.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 30 Jan 2019 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/sed</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/sed</guid>
+        
+        
+        <category>metadata</category>
+        
+        <category>command-line</category>
+        
+      </item>
+    
+      <item>
+        <title>MaybeBytes: What the '700MB' on a CD-R means</title>
+        <description>&lt;p&gt;When you look at an old CD, you might see ‘700MB’ printed in large letters on the label. MB is the SI abbreviation for megabytes or 1,000,000 bytes, but that doesn’t mean a ‘700MB’ CD has a maximum capacity of 700,000,000 bytes. It can store 737,280,000 bytes.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/digpres/assets/img/cd.png&quot; alt=&quot;Drawing of 700MiB CD-RW&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;And of course that’s not really right either.&lt;/p&gt;
+
+&lt;h2 id=&quot;binary-and-decimal-1000s&quot;&gt;Binary and Decimal 1000’s&lt;/h2&gt;
+&lt;p&gt;Computer scientists and engineers love binary math. A bit has 2 potential values (2&lt;sup&gt;1&lt;/sup&gt;). A byte has 8 potential values (2&lt;sup&gt;3&lt;/sup&gt;). When counting bits and bytes, why not keep using powers of two? That’s why you see those numbers so often. The N64 had a processor 64-bit processor (2&lt;sup&gt;6&lt;/sup&gt;). Extended ASCII encodes 256 characters (2&lt;sup&gt;8&lt;/sup&gt;). Conveniently 2&lt;sup&gt;10&lt;/sup&gt; is 1024, almost a thousand.&lt;/p&gt;
+
+&lt;p&gt;And that’s where the problems start. When we started storing lots and lots of bytes, engineers wanted an abbreviation. The SI prefixes for powers of 10, k (thousand, 10&lt;sup&gt;3&lt;/sup&gt;), M (million, 10&lt;sup&gt;6&lt;/sup&gt;), G (billion, 10&lt;sup&gt;9&lt;/sup&gt;), etc, were familiar. Some thought they should be adopted as is, but others believed binary was a more natural for digital counting. They used the following: k (2&lt;sup&gt;10&lt;/sup&gt;), M (2&lt;sup&gt;20&lt;/sup&gt;), G (2&lt;sup&gt;30&lt;/sup&gt;), etc.&lt;/p&gt;
+
+&lt;p&gt;So now you have two groups of people using the same word for a different. Errors start to build. You buy a hard drive that can store 250 GB (250x10&lt;sup&gt;9&lt;/sup&gt; bytes), but &lt;em&gt;then your operating sytem says it can only hold 233 GB&lt;/em&gt; (233x2&lt;sup&gt;30&lt;/sup&gt; bytes). And it gets worse as you count higher. A decimal k is 2.3% smaller than a binary k. A decimal G is 6.8% smaller than a binary G.&lt;/p&gt;
+
+&lt;p&gt;Obviously there was a problem that had to be fixed. The end result is that we have two prefixes: decimal prefixes stayed the same, and binary 1000’s are supposed to use binary prefixes. kiB instead of kB. MiB instead of MB. GiB instead of GB. And binary prefixes are pronounced by trading the last two letters of the decimal prefix for ‘bi’. So ‘kibi’, ‘mebi’, ‘gibi’, ‘tebi’, etc.&lt;/p&gt;
+
+&lt;p&gt;And since language is simple, this change happened immediately (it was incorporated into standards starting in 1998 and finishing in 2008), and no one ever makes a mistake. Definitely, there is not a fascinating &lt;a href=&quot;https://en.wikipedia.org/wiki/Binary_prefix&quot;&gt;Wikipedia article&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;back-to-cds&quot;&gt;Back to CD’s&lt;/h2&gt;
+&lt;p&gt;As you can guess, the ‘M’ in ‘700MB’ refers to a mebibyte, not a megabyte. A CD can store 730MB or 700MiB. And you will find CD’s that have ‘730MB’ printed on them. They store the exact same amount of data as those with ‘700MB’.&lt;/p&gt;
+
+&lt;h3 id=&quot;problem-1&quot;&gt;Problem 1&lt;/h3&gt;
+&lt;p&gt;At the beginning, I said a 700MiB CD can store 737,280,000 bytes, so why 730MB not 737.28 MB? Marketing. Round numbers sound nicer, and it would be false advertising to round up, so 730MB it is.&lt;/p&gt;
+
+&lt;h3 id=&quot;problem-2&quot;&gt;Problem 2&lt;/h3&gt;
+&lt;p&gt;CD was created as an audio format. Some of the original specifications are for audio playback, like a requirement for 90 seconds of silence so a machine could tell when the CD was finished playing. Some software and drives can write data to these areas, called &lt;a href=&quot;https://www.cdrfaq.org/faq03.html#S3-8-3&quot;&gt;overburn&lt;/a&gt;. That’s good for another few MB of data capacity.&lt;/p&gt;
+
+&lt;h2 id=&quot;so-what-is-the-max-capacity-of-a-cd&quot;&gt;So what is the max capacity of a CD?&lt;/h2&gt;
+&lt;p&gt;Data on a CD is stored as a continuous spiral of dots and dashes. To guide the laser while burning to a writeable disc, the plastic is molded with a spiral called the pre-groove. If you tighten the curve of the spiral, you can actually fit more data onto the disc, as long as your machine is capable of following the tighter groove.&lt;/p&gt;
+
+&lt;p&gt;Look around eBay long enough and you’ll find some ‘800MB’ and &lt;a href=&quot;https://www.ebay.com/itm/25-MediaRange-Branded-Blank-CD-R-discs-48x-100-min-900MB-100-minutes-CD-R-MR222-/320993466527&quot;&gt;‘900MB’ CD-R’s&lt;/a&gt;, although &lt;a href=&quot;https://www.cdrfaq.org/faq03.html#S3-8-2&quot;&gt;not all CD players can play these&lt;/a&gt;. And of course the ‘900MB’ CD actually holds about 870MiB which is really 912MB…&lt;/p&gt;
+
+&lt;p&gt;There are probably even more asides to this question, but it’s starting to feel like trying to measure the &lt;a href=&quot;https://en.wikipedia.org/wiki/Coastline_paradox&quot;&gt;coastline of the Great Britain&lt;/a&gt;, so I’m letting it lie.&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 08 Jan 2019 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/maybebytes</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/maybebytes</guid>
+        
+        
+        <category>sip</category>
+        
+        <category>audio</category>
+        
+      </item>
+    
+      <item>
+        <title>ePADD and Archivematica</title>
+        <description>&lt;h2 id=&quot;epadd-and-archivematica-ips-ips-and-ips&quot;&gt;ePADD and Archivematica: IPs, IPs, and IPs&lt;/h2&gt;
+&lt;p&gt;I’m a very big fan of using OAIS to model workflows. Get some SIPs. Make some AIPs. Deliver some DIPs. It’s all so easy, until you start trying to do it with actual tools. While working with ePADD and Archivematica recently, I ran into that theory-&amp;gt;practice barrier difficulty again.&lt;/p&gt;
+
+&lt;p&gt;If you haven’t heard of ePADD, it’s an amazing tool built at Stanford to work with email archives. The workflow is basically&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Load 1 or more email inboxes into the Appraisal module.&lt;/li&gt;
+  &lt;li&gt;Appraise, redact, accession, describe, process correspondence using Appraisal and Processing modules.&lt;/li&gt;
+  &lt;li&gt;Allow users to search, browse, and export processed emails using the Discovery and Delivery modules.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;And making all of that possible for inboxes that may contain millions of messages are some nifty tools like entity extractors, PII identifiers, and attachment browsers.&lt;/p&gt;
+
+&lt;p&gt;If I were to OAISify ePADD, each email account loaded into Appraisal is a SIP. Sets of correspondence loaded into Discovery and emails exported through Delivery are DIPs. But where’s the AIP?&lt;/p&gt;
+
+&lt;p&gt;The Processing module creates a set of files that could be treated as an AIP, but the ePADD system does not have storage functionality built in to do things like monitor fixity or manage location. It also isn’t possible to create a policy for AIP structure, file formats, or accompanying PDI. And that’s perfectly fine since there are other tools that do that. The challenge is how to integrate ePADD with those tools.&lt;/p&gt;
+
+&lt;p&gt;For example, if you use Archivematica to produce an AIP, how would handle a processed ePADD package? And how would ePADD load an Archivematica AIP into its Discovery and Delivery modules? The ePADD team was testing those questions out, and NYPL contributed.&lt;/p&gt;
+
+&lt;h2 id=&quot;oais-time&quot;&gt;OAIS Time&lt;/h2&gt;
+
+&lt;p&gt;Since everyone uses OAIS a little differently, I’ll define how I use them here at NYPL.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;Content Information - the target of preservation&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;PDI - Preservation Description Information, information the supports the identification, preservation, and understanding of Content Information.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;IP - Information Package, a group that includes Content Information and/or PDI&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;SIP - Submission Information Package, the objects that we receive as part of an archival acquisition, digitization project, or another process. In this case, each inbox is a SIP.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;AIP - Archival Information Package, the material that the Library has accessioned and commits to preserve for long-term access. In this case, the package poduced by Archivematica is an AIP.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;DIP - Dissemination Information Package, the material that the Library makes available to its users. In this case, ePADD’s Discovery and Delivery modules create DIPs.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Ingest - The set of processes that produces descriptions and AIPs from SIPs. It can include augmenting, combining, splitting, deleting, or transforming one-or-more SIPs. In this case, ePADD’s Appraisal and Proceesing modules and Archivematica are all part of ingest, particularly the Receiving SIP, Generating AIP, and Generating Description functions.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;I think it’s important to define my usage of these terms because they can be at odds with how the tools use those definitions. For example, in Archivematica every submitted package is a transfer, every transfer is transformed into one-or-more SIPs, and every SIP is transformed into an AIP. But I think of the original submission to ePADD as a SIP, so going by my tools’ terms a workflow would look like this: SIP -&amp;gt; Transfer -&amp;gt; SIP -&amp;gt; AIP. That’s confusing and limits how I can conceptually link these tools together.&lt;/p&gt;
+
+&lt;p&gt;For me, in this case and most other worfklows, Archivematica is receiving an IP that is somewhere between a SIP and an AIP.&lt;/p&gt;
+
+&lt;h2 id=&quot;epadd-ip-and-archivematica-expectations&quot;&gt;ePADD IP and Archivematica Expectations&lt;/h2&gt;
+
+&lt;p&gt;Back to the integration work. ePADD takes one or more inboxes and turns them into an IP with the following directory structure.&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;user
+    &lt;ul&gt;
+      &lt;li&gt;blobs - directory for attachments&lt;/li&gt;
+      &lt;li&gt;indexes - directory for indexes created to search email and attachments&lt;/li&gt;
+      &lt;li&gt;lexicons - directory of terms used to classify emails&lt;/li&gt;
+      &lt;li&gt;sessions - directory of added mappings like VIAF IDs and annotations&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We would like to put that IP into Archivematica, but Archivematica has expectations about how any IP is structured.&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;directory
+    &lt;ul&gt;
+      &lt;li&gt;objects - digital objects to be preserved&lt;/li&gt;
+      &lt;li&gt;metadata - metadata about digital objects to be preserved
+        &lt;ul&gt;
+          &lt;li&gt;submissionDocumention - any documents about the acquisition of records&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;logs - metadata about processes performed on digital objects&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In Archivematica, /objects contains Content Information and /metadata and /logs contains PDI. That’s a key piece of information because Archivematica runs some microservices on everything it thinks is Content Information, and generally maintains PDI as is.&lt;/p&gt;
+
+&lt;p&gt;For example, if you rename ePADD’s /user as /objects and send it to Archivematica, all of the indexes, lexicons, and sessions will be treated as Content Information. If you apply file naming or normalizing rules to those files, they would be rendered useless for the ePADD Discovery and Delivery modules.&lt;/p&gt;
+
+&lt;p&gt;On the other hand, if we treat those directories as PDI describing the context of the emails and attachments, they should be placed in /metadata and would remain untouched by Archivematica microservices. And then moving the /blobs to /objects allows us to apply preservation policies to any attachments.&lt;/p&gt;
+
+&lt;p&gt;To do this, all we need is a script that translates the ePADD IP to the Archivematica IP. That looks like &lt;a href=&quot;https://github.com/NYPL/amatica-epadd/blob/master/epadd-amatica-restructure.py&quot;&gt;this&lt;/a&gt;. Note, we were experimenting with bags, so this script also restructures the bag so that Archivematica can read the checksums and validate the Content Information.&lt;/p&gt;
+
+&lt;h2 id=&quot;archivematica-aips-and-epadd-dip-expectations&quot;&gt;Archivematica AIPs and ePADD DIP Expectations&lt;/h2&gt;
+&lt;p&gt;After translating the directory structure, Archivematica processes the ePADD IP into an AIP, and sends it to the Storage Service. That’s great, but only half of the journey. To go from the Storage Service back to ePADD, we need to translate the Archivematica AIP back into an IP that ePADD can understand. Since the Archivematica AIP is similar to its transfer requirements, doing translating back can be accomplished by doing the &lt;a href=&quot;https://github.com/NYPL/amatica-epadd/blob/master/amatica-epadd-restructure.py&quot;&gt;same steps in reverse&lt;/a&gt;, for the most part.&lt;/p&gt;
+
+&lt;p&gt;There are several files and directories created by Archivematica that I left in their original position. That’s fine, since ePADD is unaware of what most of those files are. You might even take the step of deleting those files since an end user may have no interest in them. It’s not a permanent deletion since we’re working with a copy of the AIP.&lt;/p&gt;
+
+&lt;p&gt;The most important file is the METS file, which records any changes made to the Content Objects by Archivematica. This may include file name change like replacing spaces with ‘_’ or file format changes like converting a PICT image to a BMP.&lt;/p&gt;
+
+&lt;h2 id=&quot;so-what&quot;&gt;So what?&lt;/h2&gt;
+
+&lt;p&gt;So far, these scripts translate from ePADD IP to Archivematica IP and back, but this isn’t just shuffling a deck of card for the fun of it. Archivematica can transform the Content Information in a number of ways, and all of those changes are logged in the Archivematica METS file.&lt;/p&gt;
+
+&lt;p&gt;By selectively applying Archivematica to the attachments stored in /blobs, we can address preservation risks in those attachments. The ePADD team has written code that parses out what preservation actions were taken and can then present both the original and normalized files. If you set a policy in Archivematica to migrate a Wordstar document to PDF, when you load the transformed AIP into ePADD, it will update its indexes to display the migrated version of the object. Very cool!&lt;/p&gt;
+
+&lt;h2 id=&quot;challenges-remaining&quot;&gt;Challenges Remaining&lt;/h2&gt;
+
+&lt;p&gt;This work is not wrapped up. It only covers the use case where Archivematica is normalizing formats for preservation. I’d like to add the ability to use file normalized for access, but that requires documenting how the Archivematica AIP stores those files.&lt;/p&gt;
+
+&lt;p&gt;It also needs some more documentation. Several options in the Archivematica workflow must be configured in specific ways. For example, Archivematica should not unpack any compressed packages, since ePADD doesn’t index the contents of compressed packages. I’ve included a MCP XML file with the correct configuration, but it would be more useful to include which of those choices are required.&lt;/p&gt;
+
+&lt;p&gt;There’s also the matter of adding this to automation tools. That would require identifying some heuristics to identify ePADD bags and applying the right scripts.&lt;/p&gt;
+
+&lt;p&gt;If you have any questions about this work, please contact me through email or the Github repository. One of the most important things that this work helped me realize is how fixity information can be passed into and out of Archivematica, which is something that I’ll write about in the future.&lt;/p&gt;
+</description>
+        <pubDate>Fri, 02 Nov 2018 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/epadd-and-archivematica</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/epadd-and-archivematica</guid>
+        
+        
+        <category>sip</category>
+        
+        <category>AIP</category>
+        
+        <category>DIP</category>
+        
+        <category>OAIS</category>
+        
+        <category>Archivematica</category>
+        
+        <category>ePADD</category>
+        
+      </item>
+    
+      <item>
+        <title>What Fixity Means</title>
+        <description>&lt;h2 id=&quot;fixity-and-data-loss-in-libraries&quot;&gt;Fixity and Data Loss in Libraries&lt;/h2&gt;
+&lt;p&gt;Last week, a &lt;a href=&quot;https://www.cbc.ca/news/canada/newfoundland-labrador/mun-digital-archives-wiped-out-1.4787960&quot;&gt;story&lt;/a&gt; went out that the Queen Elizabeth II Library at Memorial University in Newfoundland had lost the primary copy of its digital archives in a server crash. The good news is that library has digital preservation practices in place and is restoring the data from backups. Preservation rescues access again!&lt;/p&gt;
+
+&lt;p&gt;This and similar stories offer a view into another core digital preservation topic, fixity.&lt;/p&gt;
+
+&lt;h2 id=&quot;what-is-fixity&quot;&gt;What is Fixity?&lt;/h2&gt;
+&lt;p&gt;Fixity is the property of objects to remain fixed, stable, unaltered, etc. Ideally, preservation keeps objects stable, but all things change. Oxides flake from a VHS tape. Dyes fade on a photograph. Pests eat the pages of a book. Fixity is a useful concept for every kind of collection; however, the term fixity is mostly used within digital preservation.&lt;/p&gt;
+
+&lt;p&gt;In digital preservation, fixity is often presented alongside the concept of checksums, an amazing piece of math that lets us create a fairly unique signature for files based on the bytes they contain. This piece of fixity information can be used to detect very small changes in an object.&lt;/p&gt;
+
+&lt;p&gt;But fixity information can also be other things like the size and location of a file. And these pieces of fixity information can be used to detect much bigger changed such as has a file been partially or completely lost. And frankly, in my experience and others, complete loss is more common than the slow trickle of bit flips detected by checksums. If you want a physical example, think of how much damage is caused by &lt;a href=&quot;https://www.archives.gov/research/recover/notable-thefts.html&quot;&gt;theft&lt;/a&gt; or &lt;a href=&quot;https://blogs.loc.gov/thesignal/2013/02/after-the-flood-digital-art-recovery-in-the-wake-of-hurricane-sandy/&quot;&gt;natural disaster&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;existence-fixity-in-practice&quot;&gt;Existence Fixity in Practice&lt;/h2&gt;
+&lt;p&gt;Going back to the data loss incident at the Queen Elizabeth II Library, the server failure was likely detected in a fixity check to ensure that the server migration was completed successfully. They may not have called it a fixity check, but from a digital preservation perspective it was. And it’s a useful check to incorporate into your own workflows.&lt;/p&gt;
+
+&lt;p&gt;For example, if you use bags in your workflows, many tools have a completeness check that compares the expected list of files in the manifest with the files present on the file system.&lt;/p&gt;
+
+&lt;p&gt;In Bagger, it’s the yellow cube icon.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/digpres/assets/img/bagger-complete.png&quot; alt=&quot;Screenshot of Bagger Completeness Check Button&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;And in bagit-python, it’s the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--completeness-only&lt;/code&gt; option.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; bagit.py &lt;span class=&quot;nt&quot;&gt;--validate&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--completeness-only&lt;/span&gt; path/to/bag&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The benefit of these tools is that checking for the existence of a file is much, much faster than validating the checksums of a file. Because checksums are calculated based on every bit of a bytestream, validation requires reading every bit. On the other hand, completeness only requires reading file directory tables. You can’t detect bit-level changes, but in the face of a disaster, crime, or another event, you can survey the fixity of an entire collection relatively quickly.&lt;/p&gt;
+
+&lt;p&gt;For a more general overview of fixity, I recommend the report &lt;a href=&quot;http://www.digitalpreservation.gov/documents/NDSA-Fixity-Guidance-Report-final100214.pdf&quot;&gt;What is Fixity, and When Should I be Checking It?&lt;/a&gt; published by the NDSA.&lt;/p&gt;
+</description>
+        <pubDate>Mon, 27 Aug 2018 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/What-fixity-means</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/What-fixity-means</guid>
+        
+        
+        <category>fixity</category>
+        
+        <category>AIP</category>
+        
+        <category>BagIt</category>
+        
+      </item>
+    
+      <item>
+        <title>Bashing out another file format signature</title>
+        <description>&lt;p&gt;In the &lt;a href=&quot;/digpres/2018/01/30/bashing-out-a-file-format-signature.html&quot;&gt;last post&lt;/a&gt;, I used some bash tools to derive a file format signature for the ACS format used to store &lt;a href=&quot;https://en.wikipedia.org/wiki/Office_Assistant&quot;&gt;Clippy&lt;/a&gt;. During that analysis, 32 of the files had an OLE format signature, 0xD0CF11E0A1B11AE1.&lt;/p&gt;
+
+&lt;p&gt;Also known as the Compound File Binary Format, OLE was used as a structure for many different formats from software like 97-2003 Microsoft Office, SPSS, Minitab, and Caseware. It was also used to package the animations and character data used for Microsoft Agents.&lt;/p&gt;
+
+&lt;p&gt;On &lt;a href=&quot;https://msdn.microsoft.com/en-us/library/aa227515.aspx&quot;&gt;this documentation page&lt;/a&gt;, you can see the three formats Microsoft used for agents: ACS, ACF, and AAC. The ACS can store the entire character, but Microsoft also wanted to allow people to build websites and network applications with Agents. ACF and AAC made this easier since an application would only have to download the character data and animations it needed. On the other hand, Clippy.ACS took 6+ minutes to download over a 56k modem.&lt;/p&gt;
+
+&lt;p&gt;Examples of ACF and AAC are actually difficult to find on the web. Microsoft used to host them at locations like http://agent.microsoft.com/agent2/chars/genie/genie.acf. As far as I can tell, all of these resources are now down and weren’t collected by a web archive. However, the OLE files from http://www.ponx.org/msagent/Acs/ have some promise.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Show bytes 1152-1212 from wade.acs&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# tail, print the end of the data stream&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -c +1152, limits to starting at byte 1152&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# head -c 160, print the first 160 bytes of the tail&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# xxd show the hexcode of the bytes&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;tail&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; +1152 wade.acs | &lt;span class=&quot;nb&quot;&gt;head&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; 160 | xxd
+
+0000000: 0063 0068 0061 0072 002e 0061 0063 0066  .c.h.a.r...a.c.f
+0000010: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+0000020: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+0000030: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+0000040: 0012 0002 00ff ffff ffff ffff ffff ffff  ................
+0000050: ff00 0000 0000 0000 0000 0000 0000 0000  ................
+0000060: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+0000070: 0000 0000 0000 0000 00e4 0300 0000 0000  ................
+0000080: 0061 006e 0069 006d 0031 002e 0061 0061  .a.n.i.m.1...a.a
+0000090: 0066 0000 0000 0000 0000 0000 0000 0000  .f..............&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This OLE file has at least one ACF file and AAF file embedded in it. The trick is extracting these files from inside the OLE file.&lt;/p&gt;
+
+&lt;h2 id=&quot;collect-all-the-ole-files-from-ponx&quot;&gt;Collect all the OLE files from ponx&lt;/h2&gt;
+
+&lt;p&gt;Honestly, I would probably use python for this, but it was a fun exercise to work out as a shell-scripting ‘one-liner’. There should be 33 files in there.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Make a directory to store the OLE files&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;mkdir &lt;/span&gt;ole
+
+&lt;span class=&quot;c&quot;&gt;# Find OLE files based on their first 2 bytes&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# for ...;, open a for loop&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# file in *.[aA][cC][sS], on each loop process one acs or ACS file&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# do ...;, the loop&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# bytes=$(head -c 2 $file);, store first two bytes in variable, byte&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# test $bytes != 'ë', test if first bytes are not ë, which are true ACS files&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# &amp;amp;&amp;amp; cp $file ole, if first two bytes are not ë, copy file to ole folder&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# done, finish loop&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;file &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.[aA][cC][sS]&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;bytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;head&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; 2 &lt;span class=&quot;nv&quot;&gt;$file&lt;/span&gt;&lt;span class=&quot;si&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$bytes&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'ë'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cp&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$file&lt;/span&gt; ole&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Check out OLE ACS files&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;ls &lt;/span&gt;ole&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;extract-acf-and-aac-files-from-ole&quot;&gt;Extract ACF and AAC files from OLE&lt;/h2&gt;
+
+&lt;p&gt;This requires some tools that can read the OLE format. Since it is the basis of the 97-2003 Office formats, there’s already a very good Java library to manipulate the formats, &lt;a href=&quot;https://poi.apache.org/index.html&quot;&gt;Apache POI&lt;/a&gt;. Even better, Ross Spencer wrote a &lt;a href=&quot;github.com/exponential-decay/ole2-re-combiner&quot;&gt;nice command-line tool&lt;/a&gt; with the Java library to extract the files.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Install python java wrapper jython&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;apt-get &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;jython
+
+&lt;span class=&quot;c&quot;&gt;# Download the Apache POI library&lt;/span&gt;
+wget http://apache.mirrors.ionfish.org/poi/release/bin/poi-bin-3.17-20170915.tar.gz
+&lt;span class=&quot;nb&quot;&gt;tar&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-xzf&lt;/span&gt; poi-bin-3.17-20170915.tar.gz
+
+&lt;span class=&quot;c&quot;&gt;# Download Ross Spencer's OLE tool&lt;/span&gt;
+git clone git@github.com:exponential-decay/ole2-re-combiner.git
+
+&lt;span class=&quot;c&quot;&gt;# Extract all files from the ACS files&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# jython, run jython&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -Dpython.path=poi-3.17/poi-3.17.jar, using the POI library&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# ole2-re-combiner/ole2recombiner.py, and Ross's Python script&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# --extract $file, extract files out of OLE&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;file &lt;span class=&quot;k&quot;&gt;in &lt;/span&gt;ole/&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do &lt;/span&gt;jython &lt;span class=&quot;nt&quot;&gt;-Dpython&lt;/span&gt;.path&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;poi-3.17/poi-3.17.jar ole2-re-combiner/ole2recombiner.py &lt;span class=&quot;nt&quot;&gt;--extract&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;done&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;find-signatures-for-acf-and-aac-files&quot;&gt;Find signatures for ACF and AAC files&lt;/h2&gt;
+
+&lt;p&gt;The ole folder should be filled with subfolders now, each with the extracted ACF and AAC files. Follow the same process as the &lt;a href=&quot;/digpres/2018/01/30/bashing-out-a-file-format-signature.html&quot;&gt;post on the ACS files&lt;/a&gt; to analyze them for magic numbers. You can use a small tweak to peak into all the subdirectories with one command.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Display first 16 bytes of each ACF file&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# ole/*/*.acf, all files in subdirectories of ole that have the acf extension&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;head&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; 16 &lt;span class=&quot;nt&quot;&gt;-q&lt;/span&gt; ole/&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;/&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.acf | xxd&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I ended up with 0x1F000100 and 0x1E000100 for AAF and 0xC1ABCDAB for ACF, although I’m doing a little more research before submitting these to PRONOM.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 31 Jan 2018 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/bashing-out-another-file-format-signature</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/bashing-out-another-file-format-signature</guid>
+        
+        
+        <category>raspberry-pi</category>
+        
+        <category>bash</category>
+        
+        <category>file-formats</category>
+        
+      </item>
+    
+      <item>
+        <title>Bashing out a file format signature</title>
+        <description>&lt;p&gt;PRONOM is the digital preservation file format registry of choice, but it’s only as good as the file format signatures that we put into it. There are already great resources about how to do this. Jenny Mitcham from the University of York included links to most resources in her blog post about &lt;a href=&quot;http://digital-archiving.blogspot.com/2016/08/my-first-file-format-signature.html&quot;&gt;creating a signature&lt;/a&gt; and there is a &lt;a href=&quot;http://openpreservation.org/knowledge/blogs/topic/format-identification/&quot;&gt;trove OPF blogs&lt;/a&gt; on the subject by Ross Spencer, Andrea Byrne, Becky McGuiness, and others.&lt;/p&gt;
+
+&lt;p&gt;This post will be a very fast flyover of building signature for Microsoft’s &lt;a href=&quot;https://en.wikipedia.org/wiki/Office_Assistant&quot;&gt;ACS format, aka Clippy’s format&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;gather-some-sample-data&quot;&gt;Gather some sample data.&lt;/h2&gt;
+
+&lt;p&gt;The more examples of a format you have, the more confidence you have that you’re finding a good signature. Luckily for ACS, the Microsoft Agent tool had a small &lt;a href=&quot;http://msagentring.org/&quot;&gt;community&lt;/a&gt; that built more of these demonic helpers. I even found one resource with over &lt;a href=&quot;http://www.ponx.org/msagent/Acs/&quot;&gt;300 examples of agents&lt;/a&gt;. So let’s download all of them.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Make a throwaway directory to keep all these files organized.&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; ~/acs
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/acs
+
+&lt;span class=&quot;c&quot;&gt;# Download all the files&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# wget, downloading program&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -r, to open all the links on the page&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -nH, to not create a directory for www.ponx.org&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -np, to not create sub-directories for msagent and Acs&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# --cut-dirs, to not download anything outside the Acs directory&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; wget &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-nH&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-np&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--cut-dirs&lt;/span&gt; 3 http://www.ponx.org/msagent/Acs/&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;look-around-for-magic-numbers&quot;&gt;Look around for magic numbers&lt;/h2&gt;
+&lt;p&gt;A lot of formats use a semi-unique series of bytes at the start of the file to identify themselves. We can see if this is the case by printing out the first 16 bytes of all of the ACS files.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Display first 16 bytes of each file&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# head, prints the start of a data stream&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -c 16, limits head to the first 16 bytes&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -q, makes sure the file name is printed&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# *.acs, matches all the acs files in the folder&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# It doesn't match&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# xxd, prints the hexadecimal interpretation&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# defaults to 16 bytes per line&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;head&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; 16 &lt;span class=&quot;nt&quot;&gt;-q&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.acs | xxd
+0000000: c3ab cdab 33cd 0300 8707 0000 93c9 0300  ....3...........
+0000010: c3ab cdab ebbb 2300 ab0a 0000 c3a2 2300  ......#.......#.
+0000020: d0cf 11e0 a1b1 1ae1 0000 0000 0000 0000  ................
+0000030: c3ab cdab 5e53 0000 4f06 0000 f251 0000  ....^S..O....Q..
+0000040: c3ab cdab 017d 0300 a307 0000 697b 0300  .....&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;......i&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;..
+0000050: c3ab cdab d1dc 0c00 9106 0000 91d9 0c00  ................
+0000060: c3ab cdab e628 0a00 eb09 0000 a219 0a00  .....&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;..........
+0000070: c3ab cdab b224 0100 2d06 0000 7823 0100  .....&lt;span class=&quot;nv&quot;&gt;$.&lt;/span&gt;.-...x#..
+0000080: c3ab cdab cefc 0100 e906 0000 0afc 0100  ................
+0000090: c3ab cdab 4ee5 3700 e70a 0000 f2c9 3700  ....N.7.......7.
+00000a0: c3ab cdab 437e 1f00 8307 0000 7161 1f00  ....C~......qa..
+00000b0: c3ab cdab 437e 1f00 2c07 0000 7161 1f00  ....C~..,...qa..
+00000c0: c3ab cdab 8a92 6000 ff0b 0000 7e6c 6000  ......&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;.....~l&lt;span class=&quot;sb&quot;&gt;`&lt;/span&gt;.&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;test-any-patterns&quot;&gt;Test any patterns&lt;/h2&gt;
+
+&lt;p&gt;The first four bytes (0xC3ABCDAB) look like a good candidate, so let’s see how many files have that as the first 4 bytes.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Count up how many files start with different 4-byte strings&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# cut, extract specified fields from data&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -d &quot; &quot;, fields are delimited by spaces&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -f 2,3, extract the 2nd and 3rd field from xxd output&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# sort, alphabetical sort of the extracted lines&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# uniq -c, count how many of each line there&lt;/span&gt;
+
+&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;head&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; 16 &lt;span class=&quot;nt&quot;&gt;-q&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.acs | xxd | &lt;span class=&quot;nb&quot;&gt;cut&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot; &quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; 2,3 | &lt;span class=&quot;nb&quot;&gt;sort&lt;/span&gt; | &lt;span class=&quot;nb&quot;&gt;uniq&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt;
+284 c3ab cdab
+22 d0cf 11e0&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;You can try cutting more or less fields, but 0xC3ABCDAB looks like the longest common byte string. If you search for 0xD0CF11E0, you’ll find that that is the signature for Microsoft OLE Compound File, a general file structure used as the basis for many formats like .doc Word files and .ppt PowerPoint files. These OLE ACS files probably deserve more research.&lt;/p&gt;
+
+&lt;h2 id=&quot;research-to-backup-your-hypothesis&quot;&gt;Research to backup your hypothesis&lt;/h2&gt;
+
+&lt;p&gt;It’s always good to back up your work with data from other people. One potential source is the TrID format registry. In this case there is a &lt;a href=&quot;https://github.com/digipres/digipres.github.io/blob/master/_sources/registries/trid/triddefs_xml/ms-acs.trid.xml&quot;&gt;signature for ACS files&lt;/a&gt;, and it matches our signature.&lt;/p&gt;
+
+&lt;p&gt;There’s even someone that wrote an &lt;a href=&quot;http://fileformats.lebeausoftware.org/&quot;&gt;unofficial spec for the format&lt;/a&gt;. Remy Lebeau’s work also match our signature.&lt;/p&gt;
+
+&lt;h2 id=&quot;make-and-test-a-pronom-signature-file&quot;&gt;Make and test a PRONOM signature file&lt;/h2&gt;
+
+&lt;p&gt;Ross Spencer built this &lt;a href=&quot;http://www.nationalarchives.gov.uk/pronom/sigdev/index.htm&quot;&gt;excellent tool&lt;/a&gt; so that you don’t have to write the XML by hand. Both DROID and Siegfried can be loaded with the custom signature for testing&lt;/p&gt;
+
+&lt;h2 id=&quot;submit-the-signature&quot;&gt;Submit the signature.&lt;/h2&gt;
+
+&lt;p&gt;Package up any of the information and resources you have found and &lt;a href=&quot;https://www.nationalarchives.gov.uk/contact-us/submit-information-for-pronom/&quot;&gt;submit them to PRONOM&lt;/a&gt;. The folks at the National Archives will look over the signature and contact you with any comments.&lt;/p&gt;
+</description>
+        <pubDate>Tue, 30 Jan 2018 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/bashing-out-a-file-format-signature</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/bashing-out-a-file-format-signature</guid>
+        
+        
+        <category>raspberry-pi</category>
+        
+        <category>bash</category>
+        
+        <category>file-formats</category>
+        
+      </item>
+    
+      <item>
+        <title>Data Analysis Tools</title>
+        <description>&lt;p&gt;This is a quick aside from my series on working with Siegfried.&lt;/p&gt;
+
+&lt;p&gt;Data is useless unless without tools to analyze that data. To say anything meaningful, we need to do things like group, split, manipulate, and recombine the individual data points. A lot of larger systems have some analysis functions built in, e.g. dashboards or reports. However, when you’re not working within a system, or if that system can’t do the analysis you need, you’ll need a dedicated tool.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-spreadsheet-options-excel-sheets-etc&quot;&gt;The Spreadsheet Options (Excel, Sheets, etc)&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;The Good:&lt;/strong&gt; It’s installed, you know how to use it, you can see the data, it has a decent user interface&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;The Bad:&lt;/strong&gt; It slows down with too much data, it transforms data without telling you, it lets you fiddle with data&lt;/p&gt;
+
+&lt;p&gt;Spreadsheets can take your analysis pretty far pretty quickly thanks to their graphical user interface, and I often use them for fast analysis. Spreadsheets stop being useful when the interface gets in the way of the analysis. A couple of examples:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;You have 100 spreadsheets that you want collapsed into a single dataset. Open-copy-paste can get it done, but will take a lot of double-checking to make sure nothing was missed.&lt;/li&gt;
+  &lt;li&gt;Your barcodes are 14-digits long. Your spreadsheet program converts this to a floating-point number (3.43… * 10^13), since 32-bit integers max out at 10 digits.&lt;/li&gt;
+  &lt;li&gt;You need to add address information to 1000 rows of your spreadsheet. Writing the zip code in the first row and dragging down moves the address to Wyoming, one zip code at-a-time.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All of these problems have workarounds, including bruteforce, cell-by-cell manipulation of data. As you do larger amounts of analysis more routinely, that potential solution becomes a problem. What’s to guarantee that someone hasn’t fixed up a “few” cells by hand?&lt;/p&gt;
+
+&lt;p&gt;Data scientists advocate for &lt;a href=&quot;https://en.wikipedia.org/wiki/Reproducibility&quot;&gt;reproducibility&lt;/a&gt;, the ability for someone else to get the same results using the same data. As if often the case, the most likely someone else is a future you trying to rerun the analysis in the future. The less manual fiddling that’s needed for analysis, the more reproducible it can be. That includes messing aroud with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Open file...&lt;/code&gt; menus, as well as cell-by-cell fiddling.&lt;/p&gt;
+
+&lt;h2 id=&quot;the-scripting-options&quot;&gt;The Scripting Options&lt;/h2&gt;
+
+&lt;p&gt;To make analysis more reproducible, the first step is to start recording every step of analysis that you do.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Step 1: Load the data&lt;/li&gt;
+  &lt;li&gt;Step 2: Clean/manipulate the data&lt;/li&gt;
+  &lt;li&gt;Step 3: Run the analysis&lt;/li&gt;
+  &lt;li&gt;Step 4: Produce a report/dataset/etc&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This looks a bit like a computer program, but for it to be a program you need a language to express it in and software to write it in. The following are my two favorite ways of doing that.&lt;/p&gt;
+
+&lt;h3 id=&quot;pandas--jupyter-notebooks&quot;&gt;pandas + Jupyter Notebooks&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;The Good:&lt;/strong&gt; You may already know Python, you can use the rest of Python alongside pandas, you can process Big Data, you can’t fiddle with data, you can draft code like writing in a notebook&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;The Bad:&lt;/strong&gt; The graphing libraries are &lt;em&gt;okay&lt;/em&gt;, there can be an overwhelming number of &lt;em&gt;right&lt;/em&gt; ways to do something, indexes can become very complicated, notebooks can be very drafty&lt;/p&gt;
+
+&lt;p&gt;Pandas and R both use a concept called a dataframe, a 2 (or more) dimensional structure that stores data in columns and rows that are named by indexes. Basically, it’s a spreadsheet. By abstracting away the graphical representation, you don’t have to think about how answers to your questions fit on the sheet.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;pandas&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pd&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;read_csv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'path/to/siegfried.csv'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# How big are the files in the Siegfried report?
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;filesize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# What 10 file formats have the largest average file size?
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;groupby&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'format'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;filesize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mean&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sort_values&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ascending&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;head&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# What are the 5 most common file formats with a modified data in the 1980s?
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'modified'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'1990'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;groupby&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'format'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sort_values&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ascending&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;head&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;You can write pandas code in program you prefer, but the most common is Jupyter notebook. The examples above can be saved as Python files and run as scripts (e.g. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;python3 analysis.py&lt;/code&gt;), but often analysis requires exploring the data. In the last example, you might want to explore a specific year &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;df['modified']=='1990'&lt;/code&gt; or bound your filter
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(df['modified']&amp;lt;'1990') &amp;amp; df['modified']&amp;gt;'1980'&lt;/code&gt; while you explore. Jupyter notebooks let you edit and rerun lines of code quickly without have to rerun everything from scratch.&lt;/p&gt;
+
+&lt;p&gt;Another great benefit of pandas is that you can pull use the rest of the Python ecosystem. For example, if you want to combine a large set of CSVs into a single file, you can use the glob module to find the filenames, and then read/combine/export the data with pandas.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;pandas&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pd&lt;/span&gt;
+&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;glob&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# Find all the CSV's in a folder
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;all_files&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;glob&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;glob&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'path/to/folder/of/*.csv'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# Read them into pandas and glue them together
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df_from_each_file&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;read_csv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;all_files&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;all_df&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;pd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;concat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df_from_each_file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ignore_index&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;True&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;# Save to a new file
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;all_df&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;to_csv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'one_big.csv'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;r--rstudio&quot;&gt;R + RStudio&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;The Good:&lt;/strong&gt; The tidyverse grammar is incredibly expressive, ggplot is an amazing visualization library, you develop analyses towards a finished project.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;The Bad:&lt;/strong&gt; You probably need to learn R from scratch, R can be slow&lt;/p&gt;
+
+&lt;p&gt;R does not come with the full power of a general scripting language like Python. However, it’s data analysis functions can often feel much more fluid.  Here’s the most common file formats from the 1980s question using the piping feature from tidyverse.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tidyverse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;read_csv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'path/to/siegfried.csv'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+
+&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;# What are the 5 most common file formats with a modified data in the 1980s?&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;filter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;modified&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'1990-01-01'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;groupby&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;format&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;arrange&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;head&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Personally, that is much simpler to read than the pandas version. You can even pipe results into what many consider R’s best feature, the ggplot2 graphing library.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;df&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;year&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;year&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;modified&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;groupby&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;format&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;year&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ggplot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;geom_line&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;year&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;color&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;format&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And now you have a line graph of files by the year of their last modified date and grouped by their file format. Pretty powerful stuff.&lt;/p&gt;
+
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;The best tool for any task is the one you can best use. If you don’t have experience with pandas or R, there are plenty of free online course, Q&amp;amp;A communities, and colleagues in the field that can help you learn. On this blog, I’ll be presenting most of my data analysis work in R or pandas. I hope you can find these posts useful in learning or improving your own data toolset.&lt;/p&gt;
+</description>
+        <pubDate>Sat, 30 Dec 2017 14:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/data-analysis-tools</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/data-analysis-tools</guid>
+        
+        
+        <category>data-analysis</category>
+        
+        <category>python</category>
+        
+        <category>r</category>
+        
+      </item>
+    
+      <item>
+        <title>Troubleshooting a Siegfried Run</title>
+        <description>&lt;p&gt;In the last post, I talked about getting Siegfried installed on a Raspberry Pi and kicking off a process to identify file formats. Easy peasy, except sometimes things don’t work out perfectly. Here are a few tips on handling problems with a run.&lt;/p&gt;
+
+&lt;h2 id=&quot;connecting-to-a-raspberry-pi-from-another-computer&quot;&gt;Connecting to a Raspberry Pi from another computer&lt;/h2&gt;
+&lt;p&gt;I have a monitor and keyboard for my Pi, but sometimes it’s easier to use it through my laptop instead of turning on the monitor. For this, you’ll need to &lt;a href=&quot;https://www.raspberrypi.org/documentation/remote-access/ssh/&quot;&gt;turn on SSH&lt;/a&gt; (Secure SHell) on the Raspberry Pi.&lt;/p&gt;
+
+&lt;p&gt;In order to login to the Pi from another computer, you’ll need to know the Pi’s IP address.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Show all network connections on the Pi, run this on the Pi&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# wlan0 shows the wireless connection, eth0 shows the ethernet connection&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# The IP address for the connection is on the line that starts `inet address:`&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# The IP address probably looks like 192.###.###.### or 10.###.###.###&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;ifconfig&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Then from the other computer you can login to a command line session on the Pi.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Connect to pi from another computer&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# The default username is `pi`&lt;/span&gt;
+ssh username@pi_ip_address&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;running-siegfried-over-ssh&quot;&gt;Running Siegfried over SSH&lt;/h2&gt;
+&lt;p&gt;Any commands run during an SSH session will typically end when the user ends the session. To keep a long-running process going, use the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nohup&lt;/code&gt; (NO HangUP) command.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Make sure a Siegfried doesn't stop when you end the SSH session&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;nohup &lt;/span&gt;sf &lt;span class=&quot;nt&quot;&gt;-csv&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; sffiles.txt &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sf.csv &amp;amp;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;put-it-in-the-background&quot;&gt;Put it in the background&lt;/h2&gt;
+&lt;p&gt;The command from the end of the last post will automatically run Siegfried in the background thanks to the ‘&amp;amp;’ at the end of the command. If you didn’t add the ‘&amp;amp;’, you can still put the process in the background like this.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Press &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ctrl&lt;/code&gt; + &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;z&lt;/code&gt; to suspend the process&lt;/li&gt;
+  &lt;li&gt;Enter the command &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bg&lt;/code&gt; to put the process in the background&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;You should be able to enter new commands agains.&lt;/p&gt;
+
+&lt;h2 id=&quot;restarting-a-run&quot;&gt;Restarting a run&lt;/h2&gt;
+&lt;p&gt;If the power turns off, you’re working over a flakey network connection, or for any number of reasons, your Siegfried run might get interrupted. Rather than start from scratch, you can pick up from where you left off.&lt;/p&gt;
+
+&lt;p&gt;&lt;i&gt;Update 2018-01-31&lt;/i&gt; Richard Lehane helpfully pointed out a feature in Siegfried to make this simpler. Instead of concatenating the files with &lt;code&gt;&amp;gt;&amp;gt;&lt;/code&gt;, you can have Siegfried combine multiple result files.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Find the name of the last file characterized &lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;tail&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-1&lt;/span&gt; sf.csv
+&lt;span class=&quot;c&quot;&gt;# Get the line number of that filename from your list of files&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# to figure out how many files you characterized&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'name_of_the_file'&lt;/span&gt; sffiles.txt
+&lt;span class=&quot;c&quot;&gt;# Make a new file list by skipping characterized files&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# +, number of lines to skip, use the line number from last command&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# if that file is problematic, add one until Siegfried runs again&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;tail&lt;/span&gt; +number sffiles.txt &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sffiles2.txt
+&lt;span class=&quot;c&quot;&gt;# Restart Siegfried, adding resuls to your previous output file&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# &amp;gt;&amp;gt;, add new output to the end of file instead of overwriting&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;nohup &lt;/span&gt;sf &lt;span class=&quot;nt&quot;&gt;-csv&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; sffiles2.txt &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sf_2.csv &amp;amp;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Repeat as necessary.&lt;/p&gt;
+
+&lt;h2 id=&quot;clean-up-the-output&quot;&gt;Clean up the output&lt;/h2&gt;
+&lt;p&gt;In case you had to restart Siegfried, you’ll have a couple result files. It’s easier to handle this as one dataset.&lt;/p&gt;
+
+&lt;p&gt;&lt;i&gt;Update 2018-01-31&lt;/i&gt; Richard Lehane pointed out a feature in Siegfried to make this simpler. Instead of concatenating the files and removing extra header lines, Siegfried can combine the files cleanly.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Combine the Siegfried outputs&lt;/span&gt;
+sf &lt;span class=&quot;nt&quot;&gt;-replay&lt;/span&gt; sf.csv sf_2.csv &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sf_all.csv&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Here’s the strategy I used to use. It’s messier, and it’s probably more error prone.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Combine multiple result files&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;cat &lt;/span&gt;sf.csv sf_2.csv &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sf_all.csv
+
+&lt;span class=&quot;c&quot;&gt;# Delete any lines that include the header fields, after the first line&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 2, skip the first line&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# ${}, edit to execute&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# /.../d, delete lines that match the pattern&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'2,${/filename,filesize,modified,errors,namespace,id,format,version,mime,basis,warning/d}'&lt;/span&gt; sf_all.csv &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sf_clean.csv&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;copying-data-over-the-network&quot;&gt;Copying data over the network&lt;/h2&gt;
+&lt;p&gt;If you can use SSH, you can also copy files over SSH using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scp&lt;/code&gt; (Secure CoPy). That means less fooling around with USB sticks to get data to where you need it.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Copy Siegfried output from the Pi&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# username@pi_ip_address, login details for Pi&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# :..., path to file to copy from Pi&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# path/to/..., local paths don't need the login details and colon&lt;/span&gt;
+scp username@pi_ip_address:sf.csv path/to/copy/file/to/&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# If you need to copy from your computer to the Pi&lt;/span&gt;
+scp path/to/a/file.ext username@pi_ip_address:path/to/copy/file/to/&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I’ll add more tips as I cause more problems for myself.&lt;/p&gt;
+
+</description>
+        <pubDate>Tue, 26 Dec 2017 17:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/raspi-siegfried-2</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/raspi-siegfried-2</guid>
+        
+        
+        <category>siegfried</category>
+        
+        <category>bash</category>
+        
+        <category>raspberry-pi</category>
+        
+      </item>
+    
+      <item>
+        <title>Starting Small with Raspberry Pi</title>
+        <description>&lt;p&gt;No better way to start blogging then by starting to blog. To make this less intimidating, I’ll try to start small. Specifically with the $35 computer that sits on my desk.&lt;/p&gt;
+
+&lt;p&gt;A &lt;a href=&quot;https://www.raspberrypi.org/products/&quot;&gt;$35 Raspberry Pi&lt;/a&gt; doesn’t come with an awful lot of computing power. That’s fine by me, because parts of my work don’t need an awful lot of power. They just need a reliable little machine that:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;doesn’t consume a lot of electricity&lt;/li&gt;
+  &lt;li&gt;can stay on for weeks at a time&lt;/li&gt;
+  &lt;li&gt;can connect to our internal networks&lt;/li&gt;
+  &lt;li&gt;has plenty of USB ports&lt;/li&gt;
+  &lt;li&gt;gives me admin rights&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;A Raspberry Pi (and many of the other cheap singleboard computers) fits the bill.&lt;/p&gt;
+
+&lt;p&gt;The constant uptime is key. I use a laptop for most of my day-to-day work, which means my main computer is constantly going on- and off-line. That can make it difficult to finish jobs like downloading large files across the network and running the &lt;a href=&quot;https://twitter.com/dshr_comments&quot;&gt;DSHR Twitter bot&lt;/a&gt;. When possible I offload those jobs to my Raspberry Pi.&lt;/p&gt;
+
+&lt;p&gt;The rest of this post will be about setting up and running a very specific job, file format identification with Siegfried.&lt;/p&gt;
+
+&lt;h2 id=&quot;siegfried-on-the-raspberry-pi&quot;&gt;Siegfried on the Raspberry Pi&lt;/h2&gt;
+
+&lt;p&gt;There are a lot of tools for file format identification, the most common I see are &lt;a href=&quot;https://digital-preservation.github.io/droid/&quot;&gt;DROID&lt;/a&gt;, &lt;a href=&quot;https://www.itforarchivists.com/siegfried&quot;&gt;Siegried&lt;/a&gt;, and &lt;a href=&quot;http://fido.openpreservation.org/&quot;&gt;FIDO&lt;/a&gt;. They’re all great and useful for different purposes, but as a day-to-day tool Siegfried feels faster, and I like it’s command-line interface.&lt;/p&gt;
+
+&lt;h3 id=&quot;installing-siegfried&quot;&gt;Installing Siegfried&lt;/h3&gt;
+
+&lt;p&gt;Siegfried’s author, Richard Lehane, has included directions for installing the program on many systems. However, none of these instructions work perfectly on a Raspberry Pi. Installing with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;apt-get&lt;/code&gt; Ubuntu/Debian instructions fails because the code wasn’t compiled for ARM processors.&lt;/p&gt;
+
+&lt;p&gt;This isn’t an uncommon problem on the Raspberry Pi. Most programs are compiled for x86 processors (the kind in most Mac and PC laptops). A lot have been recompiled for ARM, but not all of them. You can recompile from source, but that’s beyond my skillset, and Richard has backup instructions.&lt;/p&gt;
+
+&lt;p&gt;Siegfried is written in Go, so like any other scripting language, installing Go should allow you to run any program written in go. But, before you type
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sudo apt-get golang-go&lt;/code&gt;
+you should know that the latest version of Go in the Raspberry Pi repository is 1.3.3. Siegfried requires 1.4 or greater, so we’ll have to install it ourselves.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Download the ARM version of Go 1.9&lt;/span&gt;
+wget https://storage.googleapis.com/golang/go1.9.linux-armv6l.tar.gz
+&lt;span class=&quot;c&quot;&gt;# Unpack the files to your local application folder&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;sudo tar&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-C&lt;/span&gt; /usr/local &lt;span class=&quot;nt&quot;&gt;-xzf&lt;/span&gt; go1.9.linux-armv6l.tar.gz
+&lt;span class=&quot;c&quot;&gt;# Add the location of the files to your PATH variable via your bash profile&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# (so when you type go, the computer knows where to find the code)&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'export PATH=$PATH:/usr/local/go/bin'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&amp;gt;&lt;/span&gt; ~/.bashrc
+&lt;span class=&quot;c&quot;&gt;# Reload your bash profile to update the PATH variable&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; ~/.bashrc
+&lt;span class=&quot;c&quot;&gt;# Check your installation&lt;/span&gt;
+go version&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Whoo! Now we can finally install Siegfried.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Install Siegfried directly from the source code on Github&lt;/span&gt;
+go get github.com/richardlehane/siegfried/cmd/sf
+&lt;span class=&quot;c&quot;&gt;# Download the latest PRONOM signature files for format identification&lt;/span&gt;
+sf &lt;span class=&quot;nt&quot;&gt;-update&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# Test out Siegfried&lt;/span&gt;
+sf ~/.bashrc&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Everything should be working, so it’s finally time to do a file format survey.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;# Generate a list of paths to all the files you want to survey&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -type f, exclude paths to directories&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# | grep -v &quot;string&quot;, optional, repeatable, exclude paths based on name&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# &amp;gt; store paths in a file&lt;/span&gt;
+find /path/to/files &lt;span class=&quot;nt&quot;&gt;-type&lt;/span&gt; f | &lt;span class=&quot;nb&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-v&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;string&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sffiles.txt
+&lt;span class=&quot;c&quot;&gt;# Run Siegfried&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -csv, output results as comma-separated lines&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# -f sffiles.txt, use the paths found in the previous step&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# &amp;amp;, run in the background&lt;/span&gt;
+sf &lt;span class=&quot;nt&quot;&gt;-csv&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; sffiles.txt &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; sf.csv &amp;amp;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Depending on the number of files, the CSV should be complete in a few minutes or days. I’ll talk about analysis later.&lt;/p&gt;
+
+</description>
+        <pubDate>Wed, 20 Dec 2017 17:00:00 +0000</pubDate>
+        <link>https://nypl.github.io/digpres/posts/raspi-siegfried</link>
+        <guid isPermaLink="true">https://nypl.github.io/digpres/posts/raspi-siegfried</guid>
+        
+        
+        <category>file-formats</category>
+        
+        <category>siegfried</category>
+        
+        <category>raspberry-pi</category>
+        
+        <category>bash</category>
+        
+      </item>
+    
+  </channel>
+</rss>
